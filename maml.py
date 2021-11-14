@@ -8,28 +8,22 @@ from torch import nn, autograd as ag
 import matplotlib.pyplot as plt
 from copy import deepcopy
 
+from dataset import MetaDataset
 
-def basic_train():
+
+def basic_train(model, x, y):
     pass
 
 
-def meta_inner_train():
-    pass
-
-
-def meta_reptile_train(model, n_iter_outer, n_iter_inner, outer_step_size):
+def reptile_train(model, meta_dataset: MetaDataset, n_shot,
+                  n_iter_outer, outer_step_size, inner_train_func):
     # Reptile training loop
     for iteration in range(n_iter_outer):
         weights_before = deepcopy(model.state_dict())
         # Generate task
-        f = gen_task()
-        y_all = f(x_all)
+        x, y = meta_dataset.sample(n_shot)
         # Do SGD on this task
-        inds = rng.permutation(len(x_all))
-        for _ in range(n_iter_inner):
-            for start in range(0, len(x_all), ntrain):
-                mbinds = inds[start:start + ntrain]
-                train_on_batch(x_all[mbinds], y_all[mbinds])
+        inner_train_func(model, x, y)
         # Interpolate between current weights and trained weights from this task
         # I.e. (weights_before - weights_after) is the meta-gradient
         weights_after = model.state_dict()
