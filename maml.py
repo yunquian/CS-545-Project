@@ -22,8 +22,11 @@ def reptile_train(model, meta_dataset: MetaDataset, n_shot,
         weights_before = deepcopy(model.state_dict())
         # Generate task
         x, y = meta_dataset.sample(n_shot)
+        x, y = torch.from_numpy(x), torch.from_numpy(y)
         # Do SGD on this task
+        print('Iter', iteration, end=': ')
         inner_train_func(model, x, y)
+        print()
         # Interpolate between current weights and trained weights from this task
         # I.e. (weights_before - weights_after) is the meta-gradient
         weights_after = model.state_dict()

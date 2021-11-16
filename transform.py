@@ -71,3 +71,11 @@ def mod_cepstrum(spec, mod_dft_mat=None):
     n = spec.shape[0]
     base = get_mod_dft_matrix(n)
     return np.abs(np.dot(base, spec))
+
+
+def vae_input(amp):
+    return log_stft(amp)
+
+
+def vae_output(amp):
+    return log_stft(amp)
