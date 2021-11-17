@@ -8,18 +8,17 @@ from scipy.io import wavfile
 from align import dtw_align
 from env import sr, n_fft, n_mfcc, non_silent_cutoff_db
 from metadata import Metadata
-from transform import mfcc_from_amp, vae_input, vae_output
-from utils import db_to_amp, non_silent_frames
+from transform import mfcc_from_amp, to_gen_model_input, to_gen_model_output
+from utils import non_silent_frames
+
+model_input_transform = to_gen_model_input
+model_output_transform = to_gen_model_output
 
 
 def read_audio(filename):
     fs, audio = wavfile.read(filename)
     assert fs == sr and len(audio.shape) == 1
     return audio
-
-
-vae_input_transform = vae_input
-vae_output_transform = vae_output
 
 
 class AudioData:
@@ -67,8 +66,8 @@ class MetaDataset:
         else:
             selected_index_pairs = self.rng.sample(alignment, k)
         s1_indices, s2_indices = zip(*selected_index_pairs)
-        return (vae_input_transform(dat1.amp[:, s1_indices]),
-                vae_output_transform(dat2.amp[:, s2_indices]))
+        return (model_input_transform(dat1.amp[:, s1_indices]),
+                model_output_transform(dat2.amp[:, s2_indices]))
 
 
 class TaskDataset:
@@ -81,8 +80,8 @@ class TaskDataset:
             self.source.mfcc, self.target.mfcc,
             (self.source.selected_frames, self.target.selected_frames))
         s_indices, t_indices = zip(*alignment)
-        return (vae_input_transform(self.source.amp[:, s_indices]),
-                vae_output_transform(self.target.amp[:, s_indices]))
+        return (model_input_transform(self.source.amp[:, s_indices]),
+                model_output_transform(self.target.amp[:, t_indices]))
 
 
 class InputData:
@@ -90,4 +89,4 @@ class InputData:
         self.dat = AudioData(filename)
 
     def get(self):
-        return vae_input_transform(self.dat.amp)
+        return model_input_transform(self.dat.amp)

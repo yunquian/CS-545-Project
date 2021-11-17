@@ -1,24 +1,6 @@
 import numpy as np
 
-
-def db_to_amp(db):
-    """
-    Converts decibels to amplitude
-    db = 20 * log10(amp / amp_ref)
-    :param db: decibels
-    :return: amplitude
-    """
-    return 10.0 ** (db / 20)
-
-
-def db_to_power(db):
-    """
-    Converts decibels to power
-    power_db = 10 * log10(amp / amp_ref)
-    :param db: decibels
-    :return: power
-    """
-    return 10.0 ** (db / 10)
+from transform import db_to_power
 
 
 def non_silent_frames(amp, cutoff_db=60):

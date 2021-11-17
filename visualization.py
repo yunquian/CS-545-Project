@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 
 def plot_spec(amp, time=None, freq=None, title='',
-              new_plot=True, figure_size=(10, 10)):
+              new_plot=True, figure_size=(10, 6)):
     """
     Draws spectrum
     :param amp: 2D numpy array of shape (freq, time)
