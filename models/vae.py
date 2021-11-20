@@ -9,9 +9,9 @@ class ToyVAE(nn.Module):
     def __init__(self, frame_size=n_fft // 2 + 1):
         super().__init__()
         self.fc1 = nn.Linear(frame_size, 512)
-        self.mu = nn.Linear(512, 10)
-        self.log_var = nn.Linear(512, 10)
-        self.fc2 = nn.Linear(10, 512)
+        self.mu = nn.Linear(512, 512)
+        self.log_var = nn.Linear(512, 512)
+        self.fc2 = nn.Linear(512, 512)
         self.fc3 = nn.Linear(512, frame_size)
         self.sigmoid = nn.Sigmoid()
 
