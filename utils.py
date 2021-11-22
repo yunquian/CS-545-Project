@@ -1,6 +1,6 @@
 import numpy as np
 
-from transform import db_to_power
+from data.transform import db_to_power
 
 
 def non_silent_frames(amp, cutoff_db=60):

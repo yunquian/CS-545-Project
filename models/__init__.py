@@ -8,5 +8,4 @@ def save_model(path, model):
 def load_model(path, model_class, *args, **kwargs):
     model = model_class(*args, **kwargs)
     model.load_state_dict(torch.load(path))
-    model.eval()
     return model

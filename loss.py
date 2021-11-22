@@ -2,8 +2,8 @@ import torch.nn as nn
 from torch.nn import MSELoss
 import torchaudio
 
-from env import sr, frame_size, n_fft
-from transform import db_to_amp
+from env import sr, frame_size
+from data.transform import db_to_amp
 
 
 class MelMSE(nn.Module):

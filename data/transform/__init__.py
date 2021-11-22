@@ -55,16 +55,16 @@ def mfcc_from_amp(amp, sr, n_mfcc):
 
 def to_gen_model_input(amp):
     """Converts data to generative model's input"""
-    return log_stft(amp)
+    return log_stft(amp) / 60
 
 
 def to_gen_model_output(amp):
     """
     Converts data (amplitude of target frames) to generative model's output
     """
-    return log_stft(amp)
+    return log_stft(amp) / 60
 
 
 def from_gen_model_output(model_out):
     """Converts generative model's output to amplitude"""
-    return db_to_amp(model_out)
+    return db_to_amp(model_out * 60)

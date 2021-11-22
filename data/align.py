@@ -50,12 +50,14 @@ def _dtw_mtx(a: np.ndarray, b: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
 dtw_matrix = njit(_dtw_mtx)
 
 
-def dtw_align(a, b, selected_frames=None):
+def dtw_align(a, b, selected_frames=None, well_defined=True):
     """
     :param a: (n_features, n_samples) numpy array
     :param b: (n_features, n_samples) numpy array
-    :return: list of aligned pairs
     :param selected_frames: (arr1, arr2), boolean arrays
+    :param well_defined: the alignment would be a well defined function,
+        that is, each frame in 'a' will be matched to a unique frame in 'b'
+    :return: list of aligned pairs
     Description
     ------
     pairs = dtw_align(spectrogram1, spectrogram2)
@@ -77,6 +79,12 @@ def dtw_align(a, b, selected_frames=None):
         else:
             i -= 1
             j -= 1
+    if well_defined:
+        f = {}
+        for i, j in pts:
+            if i not in f or dist[i, j] < dist[i, f[i]]:
+                f[i] = j
+        pts = [(i, f[i]) for i in f.keys()]
     if selected_frames is not None:
         a_selected, b_selected = selected_frames
         new_pts = []

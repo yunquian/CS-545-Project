@@ -1,37 +1,13 @@
 from random import Random
 from typing import List
 
-import numpy as np
-from scipy.signal import stft
-from scipy.io import wavfile
+from data import AudioData
+from data.align import dtw_align
+from data.metadata import Metadata
+from data.transform import to_gen_model_input, to_gen_model_output
 
-from align import dtw_align
-from env import sr, n_fft, n_mfcc, non_silent_cutoff_db
-from metadata import Metadata
-from transform import mfcc_from_amp, to_gen_model_input, to_gen_model_output
-from utils import non_silent_frames
-
-model_input_transform = to_gen_model_input
-model_output_transform = to_gen_model_output
-
-
-def read_audio(filename):
-    fs, audio = wavfile.read(filename)
-    assert fs == sr and len(audio.shape) == 1
-    avg_power = np.average(audio ** 2)
-    if avg_power > 1e-100:
-        audio = audio / np.sqrt(avg_power)
-    return audio.astype(np.float32)
-
-
-class AudioData:
-    def __init__(self, filename):
-        audio = read_audio(filename)
-        _, _, zxx = stft(audio, sr, nperseg=n_fft)
-        self.amp = np.abs(zxx)
-        self.mfcc = mfcc_from_amp(self.amp, sr, n_mfcc)
-        self.selected_frames = np.ones(self.amp.shape[1], dtype=np.bool)
-            # non_silent_frames(self.amp, non_silent_cutoff_db)
+to_model_input_transform = to_gen_model_input
+to_model_output_transform = to_gen_model_output
 
 
 class MetaDataset:
@@ -70,8 +46,8 @@ class MetaDataset:
         else:
             selected_index_pairs = self.rng.sample(alignment, k)
         s1_indices, s2_indices = zip(*selected_index_pairs)
-        return (model_input_transform(dat1.amp[:, s1_indices]),
-                model_output_transform(dat2.amp[:, s2_indices]))
+        return (to_model_input_transform(dat1.amp[:, s1_indices]),
+                to_model_output_transform(dat2.amp[:, s2_indices]))
 
 
 class TaskDataset:
@@ -84,8 +60,8 @@ class TaskDataset:
             self.source.mfcc, self.target.mfcc,
             (self.source.selected_frames, self.target.selected_frames))
         s_indices, t_indices = zip(*alignment)
-        return (model_input_transform(self.source.amp[:, s_indices]),
-                model_output_transform(self.target.amp[:, t_indices]))
+        return (to_model_input_transform(self.source.amp[:, s_indices]),
+                to_model_output_transform(self.target.amp[:, t_indices]))
 
 
 class InputData:
@@ -93,4 +69,4 @@ class InputData:
         self.dat = AudioData(filename)
 
     def get(self):
-        return model_input_transform(self.dat.amp)
+        return to_model_input_transform(self.dat.amp)
