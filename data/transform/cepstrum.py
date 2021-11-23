@@ -39,7 +39,7 @@ def inverse_scale_cepstrum(log_amp, inv_scale_dft_mat=None):
     :return:
     """
     if inv_scale_dft_mat is not None:
-        return np.dot(inv_scale_dft_mat, log_amp)
+        return np.abs(np.dot(inv_scale_dft_mat, log_amp))
     n = log_amp.shape[0]
     base = get_inverse_scale_dft_matrix(n)
     return np.abs(np.dot(base, log_amp))
@@ -51,6 +51,7 @@ def mod_cepstrum(log_amp, inv_scale_dft_mat=None, filter_size=10):
     inverse-scale cepstral analysis
     :param log_amp: log amplitude
     :param inv_scale_dft_mat: inverse scale dft matrix
+    :param filter_size:
     :return:
     """
     if len(log_amp.shape) == 1:
@@ -59,4 +60,5 @@ def mod_cepstrum(log_amp, inv_scale_dft_mat=None, filter_size=10):
         kernel = np.ones((filter_size, 1)) / filter_size
     low_pass_filtered = signal.convolve(log_amp, kernel, mode='same')
     hi_pass_filtered = log_amp - low_pass_filtered
-    return inverse_scale_cepstrum(hi_pass_filtered, inv_scale_dft_mat)
+    return inverse_scale_cepstrum(hi_pass_filtered,
+                                  inv_scale_dft_mat).astype(log_amp.dtype)

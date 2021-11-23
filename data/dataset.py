@@ -30,15 +30,19 @@ def from_gen_model_output(model_out):
 
 
 def audio_dat_to_log_amp_mfcc_mod_ceps(audio_data: AudioData, indices):
+    if indices is None:
+        indices = np.arange(audio_data.amp.shape[1])
     log_amp = log_stft(audio_data.amp)
     mfcc = audio_data.mfcc
     mod_ceps = mod_cepstrum(log_amp, default_inverse_scale_dft_matrix)
-    return np.hstack([log_amp[:,indices] / 60,
-                      mfcc[:, indices],
-                      mod_ceps[:, indices]])
+    return np.vstack([
+        log_amp[:, indices] / 60,
+        mfcc[1:, indices],
+        mod_ceps[:mod_ceps.shape[0] // 2, indices] / 500
+    ]).astype(np.float32)
 
 
-to_model_input_transform = to_gen_model_input
+to_model_input_transform = audio_dat_to_log_amp_mfcc_mod_ceps
 to_model_output_transform = to_gen_model_output
 
 
@@ -78,7 +82,7 @@ class MetaDataset:
         else:
             selected_index_pairs = self.rng.sample(alignment, k)
         s1_indices, s2_indices = zip(*selected_index_pairs)
-        return (to_model_input_transform(dat1.amp[:, s1_indices]),
+        return (to_model_input_transform(dat1, s1_indices),
                 to_model_output_transform(dat2.amp[:, s2_indices]))
 
 
@@ -92,7 +96,7 @@ class TaskDataset:
             self.source.mfcc, self.target.mfcc,
             (self.source.selected_frames, self.target.selected_frames))
         s_indices, t_indices = zip(*alignment)
-        return (to_model_input_transform(self.source.amp[:, s_indices]),
+        return (to_model_input_transform(self.source, s_indices),
                 to_model_output_transform(self.target.amp[:, t_indices]))
 
 
@@ -101,4 +105,4 @@ class InputData:
         self.dat = AudioData(filename)
 
     def get(self):
-        return to_model_input_transform(self.dat.amp)
+        return to_model_input_transform(self.dat.amp, None)
