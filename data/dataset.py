@@ -1,10 +1,42 @@
 from random import Random
 from typing import List
 
+import numpy as np
+
 from data import AudioData
 from data.align import dtw_align
 from data.metadata import Metadata
-from data.transform import to_gen_model_input, to_gen_model_output
+from data.transform import log_stft, db_to_amp
+from data.transform.cepstrum import (
+    mod_cepstrum,
+    default_inverse_scale_dft_matrix)
+
+
+def to_gen_model_input(amp):
+    """Converts data to generative model's input"""
+    return log_stft(amp) / 60
+
+
+def to_gen_model_output(amp):
+    """
+    Converts data (amplitude of target frames) to generative model's output
+    """
+    return log_stft(amp) / 60
+
+
+def from_gen_model_output(model_out):
+    """Converts generative model's output to amplitude"""
+    return db_to_amp(model_out * 60)
+
+
+def audio_dat_to_log_amp_mfcc_mod_ceps(audio_data: AudioData, indices):
+    log_amp = log_stft(audio_data.amp)
+    mfcc = audio_data.mfcc
+    mod_ceps = mod_cepstrum(log_amp, default_inverse_scale_dft_matrix)
+    return np.hstack([log_amp[:,indices] / 60,
+                      mfcc[:, indices],
+                      mod_ceps[:, indices]])
+
 
 to_model_input_transform = to_gen_model_input
 to_model_output_transform = to_gen_model_output
@@ -26,7 +58,7 @@ class MetaDataset:
     def sample(self, k=None, is_speaker_different=True):
         """
         Selects a random task and then draws k samples from the task
-        :param k:
+        :param k: k shot, None for all samples
         :param is_speaker_different:
         :return:
         """

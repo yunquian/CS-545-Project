@@ -51,20 +51,3 @@ def mfcc_from_amp(amp, sr, n_mfcc):
     power = np.abs(amp) ** 2
     mel_spec = librosa.feature.melspectrogram(S=power, sr=sr)
     return librosa.feature.mfcc(S=librosa.power_to_db(mel_spec), n_mfcc=n_mfcc)
-
-
-def to_gen_model_input(amp):
-    """Converts data to generative model's input"""
-    return log_stft(amp) / 60
-
-
-def to_gen_model_output(amp):
-    """
-    Converts data (amplitude of target frames) to generative model's output
-    """
-    return log_stft(amp) / 60
-
-
-def from_gen_model_output(model_out):
-    """Converts generative model's output to amplitude"""
-    return db_to_amp(model_out * 60)
