@@ -1,4 +1,5 @@
 import numpy as np
+from scipy import signal
 
 
 def get_mod_dft_matrix(n):
@@ -23,17 +24,34 @@ def get_mod_dft_matrix(n):
     return base
 
 
-def mod_cepstrum(spec, mod_dft_mat=None):
+def inverse_scale_cepstrum(log_amp, mod_dft_mat=None):
     """
     In a cepstrum each entry corresponds to "freq" in frequency domain
     By sampling in the DTFT in a inverse manner, in the mod-cepstrum each
     entry corresponds to "period" in freq domain (to extract formant)
-    :param spec: amplitude
+    :param log_amp: log amplitude
     :param mod_dft_mat:
     :return:
     """
     if mod_dft_mat is not None:
-        return np.dot(mod_dft_mat, spec)
-    n = spec.shape[0]
+        return np.dot(mod_dft_mat, log_amp)
+    n = log_amp.shape[0]
     base = get_mod_dft_matrix(n)
-    return np.abs(np.dot(base, spec))
+    return np.abs(np.dot(base, log_amp))
+
+
+def mod_cepstrum(log_amp, mod_dft_mat=None, filter_size=10):
+    """
+    High-pass filter the log_spectrum before performing
+    inverse-scale cepstral analysis
+    :param log_amp: log amplitude
+    :param mod_dft_mat:
+    :return:
+    """
+    if len(log_amp.shape) == 1:
+        kernel = np.ones(filter_size) / filter_size
+    else:
+        kernel = np.ones((filter_size, 1)) / filter_size
+    low_pass_filtered = signal.convolve(log_amp, np.ones(10) / 10, mode='same')
+    hi_pass_filtered = log_amp - low_pass_filtered
+    return inverse_scale_cepstrum(hi_pass_filtered, mod_dft_mat)
