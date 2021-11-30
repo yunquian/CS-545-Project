@@ -1,7 +1,16 @@
 import numpy as np
+import numpy.fft as fft
 from scipy import signal
 
 from env import frame_size
+
+from data.transform import mean_filter
+
+
+def filtered_cepstrum(log_amp, kernel_size=20):
+    low_pass_filtered = mean_filter(log_amp, kernel_size)
+    hi_pass_filtered = log_amp - low_pass_filtered
+    return np.abs(fft.rfft(hi_pass_filtered, axis=0))
 
 
 def get_inverse_scale_dft_matrix(n):
@@ -54,11 +63,7 @@ def mod_cepstrum(log_amp, inv_scale_dft_mat=None, filter_size=10):
     :param filter_size:
     :return:
     """
-    if len(log_amp.shape) == 1:
-        kernel = np.ones(filter_size) / filter_size
-    else:
-        kernel = np.ones((filter_size, 1)) / filter_size
-    low_pass_filtered = signal.convolve(log_amp, kernel, mode='same')
+    low_pass_filtered = mean_filter(log_amp, filter_size)
     hi_pass_filtered = log_amp - low_pass_filtered
     return inverse_scale_cepstrum(hi_pass_filtered,
                                   inv_scale_dft_mat).astype(log_amp.dtype)

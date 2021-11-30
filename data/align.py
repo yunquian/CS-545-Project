@@ -50,13 +50,15 @@ def _dtw_mtx(a: np.ndarray, b: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
 dtw_matrix = njit(_dtw_mtx)
 
 
-def dtw_align(a, b, selected_frames=None, well_defined=True):
+def dtw_align(a, b, selected_frames=None, well_defined=True, injective=True):
     """
     :param a: (n_features, n_samples) numpy array
     :param b: (n_features, n_samples) numpy array
     :param selected_frames: (arr1, arr2), boolean arrays
     :param well_defined: the alignment would be a well defined function,
         that is, each frame in 'a' will be matched to a unique frame in 'b'
+    :param injective: this parameter is used only when well_defined is True;
+        used to indicate whether the alignment is a injective function
     :return: list of aligned pairs
     Description
     ------
@@ -85,6 +87,12 @@ def dtw_align(a, b, selected_frames=None, well_defined=True):
             if i not in f or dist[i, j] < dist[i, f[i]]:
                 f[i] = j
         pts = [(i, f[i]) for i in f.keys()]
+        if injective:
+            f = {}
+            for i, j in pts:
+                if j not in f or dist[i, j] < dist[f[j], j]:
+                    f[j] = i
+            pts = [(f[j], j) for j in f.keys()]
     if selected_frames is not None:
         a_selected, b_selected = selected_frames
         new_pts = []

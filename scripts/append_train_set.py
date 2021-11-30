@@ -32,7 +32,7 @@ class _TargetMetadata:
 
 
 def _append_data(metadata: Metadata, target_metadata: _TargetMetadata,
-                min_time=3.0):
+                 min_time=4.0):
     dat = _read_all(metadata)
     # calc mean time
     mean_time = []
@@ -57,6 +57,7 @@ def _append_data(metadata: Metadata, target_metadata: _TargetMetadata,
             start = audio_id + 1
             current_sum = 0
             current_write_id += 1
+    print('Total audios:', current_write_id)
 
 
 class VCC2016TrainTargetMetadata(_TargetMetadata):

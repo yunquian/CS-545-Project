@@ -1,15 +1,17 @@
 """
 Implementing MAML
 """
+from copy import deepcopy
+
+import numpy as np
 
 import torch
-from copy import deepcopy
 
 from data.dataset import MetaDataset
 
 
 def _inner_train_template(model, x, y, n_iter=1000,
-                          log_period=None):
+                          log_period=None, **kwargs):
     """
     :param model: model to be trained
     :param x: (n_feature, n) tensor as model input
@@ -23,7 +25,7 @@ def _inner_train_template(model, x, y, n_iter=1000,
 def reptile_train(model, meta_dataset: MetaDataset, n_shot,
                   n_iter_meta, meta_step_size,
                   inner_train_func, n_iter_inner=1000,
-                  log_period_meta=10, log_period_inner=250):
+                  log_period_meta=10, log_period_inner=250, **kwargs):
     # Reptile training loop
     for iteration in range(n_iter_meta):
         should_log = (log_period_meta is not None
@@ -32,12 +34,13 @@ def reptile_train(model, meta_dataset: MetaDataset, n_shot,
         weights_before = deepcopy(model.state_dict())
         # Generate task
         x, y = meta_dataset.sample(n_shot)
-        x, y = torch.from_numpy(x), torch.from_numpy(y)
+        x = torch.from_numpy(x.astype(np.float32))
+        y = torch.from_numpy(y.astype(np.float32))
         # Do optimization on this task
         if should_log:
             print('Meta iter', iteration, ': ')
         inner_train_func(model, x, y, n_iter=n_iter_inner,
-                         log_period=inner_log_period)
+                         log_period=inner_log_period, **kwargs)
         # Interpolate between current weights and trained weights from this task
         # I.e. (weights_before - weights_after) is the meta-gradient
         weights_after = model.state_dict()
