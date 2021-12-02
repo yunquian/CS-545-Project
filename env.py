@@ -7,11 +7,12 @@ sr = 16000  # all audios has sr = 16000
 
 # fft
 n_fft = 2048
+# n_fft = 4096
 n_hop = 512
 frame_size = n_fft // 2 + 1
 
 # mfcc
-n_mfcc_align = 20  # used for alignment
+n_mfcc_align = 64  # used for alignment
 n_mfcc_model = 128  # used for generative model
 
 # amplitude cutoff

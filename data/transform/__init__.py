@@ -70,7 +70,7 @@ def mean_filter(spec, kernel_size=10, zero_pad=False):
     return ret
 
 
-def dft_filter(log_amp):
+def dft_filter(log_amp, cutoff_index_lo=15, cutoff_index_hi=105):
     """
     :param log_amp:
     :return: (spectral envelope, fundamental freq & harmonics)
@@ -84,7 +84,7 @@ def dft_filter(log_amp):
 
     hi_ceps = c_ceps.copy()
     hi_ceps[:20] = 0
-    hi_ceps[105:] = 0  # empirical, sr/2/env.fundamental_freq_min + 11
+    hi_ceps[120:] = 0  # empirical, sr/2/env.fundamental_freq_min + 21
     hi = np.zeros_like(log_amp)
     hi_recon = irfft(hi_ceps, axis=0)
     hi[:hi_recon.shape[0]] = hi_recon
