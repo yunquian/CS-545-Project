@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+import torch
+
 
 def plot_spec(amp, time=None, freq=None, title='',
               new_plot=True, figure_size=(10, 6)):
@@ -13,6 +15,8 @@ def plot_spec(amp, time=None, freq=None, title='',
     :param new_plot: whether draws on new figure
     :param figure_size: (width, height) tuple
     """
+    if isinstance(amp, torch.Tensor):
+        amp = amp.detach().cpu()
     if new_plot:
         plt.figure(figsize=figure_size)
         plt.title(title)
