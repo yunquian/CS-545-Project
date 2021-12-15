@@ -77,14 +77,14 @@ def dft_filter(log_amp, cutoff_index_lo=15, cutoff_index_hi=105):
     """
     c_ceps = rfft(log_amp, axis=0)
     lo_ceps = c_ceps.copy()
-    lo_ceps[20:] = 0  # empirical, sr/2/env.fundamental_freq_max - 11
+    lo_ceps[24:] = 0  # empirical, sr/2/env.fundamental_freq_max - 11
     lo = np.zeros_like(log_amp)
     lo_recon = irfft(lo_ceps, axis=0)
     lo[:lo_recon.shape[0]] = lo_recon
 
     hi_ceps = c_ceps.copy()
-    hi_ceps[:20] = 0
-    hi_ceps[120:] = 0  # empirical, sr/2/env.fundamental_freq_min + 21
+    hi_ceps[:24] = 0
+    hi_ceps[115:] = 0  # empirical, sr/2/env.fundamental_freq_min + 21
     hi = np.zeros_like(log_amp)
     hi_recon = irfft(hi_ceps, axis=0)
     hi[:hi_recon.shape[0]] = hi_recon

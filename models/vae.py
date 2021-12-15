@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from env import n_fft, n_mfcc_model, frame_size
 
 
-class ToyVAE(nn.Module):
+class ToyAE(nn.Module):
     def __init__(self, frame_size=n_fft // 2 + 1):
         super().__init__()
         self.model = nn.Sequential(
@@ -33,11 +33,6 @@ class MultiFeaturePerceptron(nn.Module):
 
     def forward(self, x):
         return self.model(x)
-
-
-class FormantModel(nn.Module):
-    def __init__(self):
-        super().__init__()
 
 
 class OldCustomModel(nn.Module):

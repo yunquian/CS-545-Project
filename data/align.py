@@ -47,7 +47,7 @@ def _dtw_mtx(a: np.ndarray, b: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     return dist, last
 
 
-dtw_matrix = njit(_dtw_mtx)
+_dtw_matrix = njit(_dtw_mtx)
 
 
 def dtw_align(a, b, selected_frames=None, well_defined=True, injective=True):
@@ -66,7 +66,7 @@ def dtw_align(a, b, selected_frames=None, well_defined=True, injective=True):
 
     pairs: [(i,j), ...], i is index in spectrogram 1 and j in spectrogram 2
     """
-    dist, last = dtw_matrix(a, b)
+    dist, last = _dtw_matrix(a, b)
     assert dist.shape == last.shape
     pts = []
     i, j = last.shape[0], last.shape[1]

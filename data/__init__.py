@@ -11,6 +11,7 @@ from utils import non_silent_frames
 
 
 def read_audio(filename):
+    """Returns: 1d numpy array"""
     fs, audio = wavfile.read(filename)
     assert fs == sr and len(audio.shape) == 1
     avg_power = np.average(audio ** 2)
@@ -24,7 +25,13 @@ class AudioData:
         audio = read_audio(filename)
         _, _, zxx = stft(audio, sr, nperseg=n_fft, noverlap=n_fft-n_hop)
         self.amp = np.abs(zxx)
-        self.mfcc_align = mfcc_from_amp(self.amp, sr, n_mfcc_align)
+        self.align_features = mfcc_from_amp(self.amp, sr, n_mfcc_align)
         self.mfcc_model = mfcc_from_amp(self.amp, sr, n_mfcc_model)
+        self.frame_energy = np.average(self.amp ** 2, axis=0)
+        # self.frame_energy = np.ones_like(self.frame_energy)
         # self.selected_frames = np.ones(self.amp.shape[1], dtype=np.bool)
         self.selected_frames = non_silent_frames(self.amp, non_silent_cutoff_db)
+
+    def normalized_amp(self):
+        return np.where(self.frame_energy == 0, 0,
+                        self.amp / np.sqrt(self.frame_energy))
