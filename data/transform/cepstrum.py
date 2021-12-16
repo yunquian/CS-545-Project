@@ -1,10 +1,9 @@
 import numpy as np
 import numpy.fft as fft
-from scipy import signal
 
-from env import frame_size
 
 from data.transform import mean_filter
+from env import frame_size
 
 
 def filtered_cepstrum(log_amp, kernel_size=20):
@@ -35,6 +34,22 @@ def get_inverse_scale_dft_matrix(n):
     return base
 
 
+def get_custom_scale_dft_matrix(full_freq, custom_freq):
+    n_in, n_out = full_freq.size, custom_freq.size
+    freq_per_bin = full_freq[-1] / full_freq.size
+    period = custom_freq / freq_per_bin
+    omega_n = np.e ** (-1j * 2 * np.pi / n_in)
+
+    def get_vector(term):
+        c = n_in / term
+        return omega_n ** (np.arange(n_in) * c)
+
+    base = np.zeros((n_out, n_in), dtype=np.complex128)
+    for i in range(n_out):
+        base[i, :] = get_vector(period[i])
+    return base
+
+
 default_inverse_scale_dft_matrix = get_inverse_scale_dft_matrix(frame_size)
 
 
@@ -54,16 +69,19 @@ def inverse_scale_cepstrum(log_amp, inv_scale_dft_mat=None):
     return np.abs(np.dot(base, log_amp))
 
 
-def mod_cepstrum(log_amp, inv_scale_dft_mat=None, filter_size=10):
+def mod_cepstrum(log_amp, custom_scale_dft_mat=None, filter_size=10):
     """
     High-pass filter the log_spectrum before performing
     inverse-scale cepstral analysis
     :param log_amp: log amplitude
-    :param inv_scale_dft_mat: inverse scale dft matrix
+    :param custom_scale_dft_mat: inverse scale dft matrix
     :param filter_size:
     :return:
     """
+    if filter_size is None:
+        return inverse_scale_cepstrum(
+            log_amp, custom_scale_dft_mat).astype(log_amp.dtype)
     low_pass_filtered = mean_filter(log_amp, filter_size)
     hi_pass_filtered = log_amp - low_pass_filtered
-    return inverse_scale_cepstrum(hi_pass_filtered,
-                                  inv_scale_dft_mat).astype(log_amp.dtype)
+    return inverse_scale_cepstrum(
+        hi_pass_filtered, custom_scale_dft_mat).astype(log_amp.dtype)

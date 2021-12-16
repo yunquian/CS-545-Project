@@ -1,3 +1,7 @@
+"""
+This file is part of the discarded attempts
+"""
+
 from random import Random
 from typing import List
 
@@ -118,7 +122,7 @@ class MetaDataset:
         audio_index = self.rng.randrange(self.metadata.n_audios)
         dat1, dat2 = self.dat[s1][audio_index], self.dat[s2][audio_index]
         alignment = dtw_align(
-            dat1.mfcc_align, dat2.mfcc_align,
+            dat1.align_features, dat2.align_features,
             (dat1.selected_frames, dat2.selected_frames))
         if k is None:
             selected_index_pairs = alignment
@@ -136,14 +140,14 @@ class TaskDataset:
 
     def get_as_aligned_amp(self):
         alignment = dtw_align(
-            self.source.mfcc_align, self.target.mfcc_align,
+            self.source.align_features, self.target.align_features,
             (self.source.selected_frames, self.target.selected_frames))
         s_indices, t_indices = zip(*alignment)
         return self.source.amp[:, s_indices], self.target.amp[:, t_indices]
 
     def get(self):
         alignment = dtw_align(
-            self.source.mfcc_align, self.target.mfcc_align,
+            self.source.align_features, self.target.align_features,
             (self.source.selected_frames, self.target.selected_frames))
         s_indices, t_indices = zip(*alignment)
         return (to_model_input_transform(self.source, s_indices),

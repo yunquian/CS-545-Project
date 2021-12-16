@@ -25,6 +25,20 @@ class MSE(nn.Module):
         return (diff**2).mean()
 
 
+class ScaledMSE(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def scale(self, x):
+        return x ** 2
+
+    def forward(self, model_output, target):
+        model_output = self.scale(model_output)
+        target = self.scale(target)
+        diff = model_output - target
+        return (diff**2).mean()
+
+
 class MelMSE(nn.Module):
     def __init__(self, n_mel=128, is_input_log_amp=True):
         super().__init__()

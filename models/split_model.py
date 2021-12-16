@@ -1,6 +1,11 @@
+"""
+TODO: This approach is unfinished, try implement parametric CVAE
+"""
+
 from typing import List
 import random
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -12,7 +17,7 @@ from data.metadata import Metadata
 from data.transform import dft_filter, log_stft
 
 
-class FormantCoderDataset:
+class AutoEncoderDataset:
     def __init__(self, metadata: Metadata):
         self.all_audio_filenames = [
             metadata.get(speaker_id, audio_id)
@@ -26,9 +31,10 @@ class FormantCoderDataset:
         ]
 
     def __getitem__(self, index):
-        amp = self.all_audios[index].amp
+        selected_frames = self.all_audios[index].selected_frames
+        amp = self.all_audios[index].normalized_amp()[:, selected_frames]
         lo, hi = dft_filter(log_stft(amp))
-        return lo
+        return lo, hi
 
 
 class SplitModelMetaDataset:
@@ -61,7 +67,7 @@ class SplitModelMetaDataset:
         audio_index = self.rng.randrange(self.metadata.n_audios)
         dat1, dat2 = self.dat[s1][audio_index], self.dat[s2][audio_index]
         alignment = dtw_align(
-            dat1.mfcc_align, dat2.mfcc_align,
+            dat1.align_features, dat2.align_features,
             (dat1.selected_frames, dat2.selected_frames))
         if k is None:
             selected_index_pairs = alignment
@@ -78,14 +84,14 @@ class SplitModelTaskDataset:
 
     def get_as_aligned_amp(self):
         alignment = dtw_align(
-            self.source.mfcc_align, self.target.mfcc_align,
+            self.source.align_features, self.target.align_features,
             (self.source.selected_frames, self.target.selected_frames))
         s_indices, t_indices = zip(*alignment)
         return self.source.amp[:, s_indices], self.target.amp[:, t_indices]
 
     def get(self):
         alignment = dtw_align(
-            self.source.mfcc_align, self.target.mfcc_align,
+            self.source.align_features, self.target.align_features,
             (self.source.selected_frames, self.target.selected_frames))
         s_indices, t_indices = zip(*alignment)
         return self.source, s_indices, self.target, t_indices
@@ -98,10 +104,10 @@ class FormantCoder(nn.Module):
     def __init__(self):
         super().__init__()
         self.encoder = nn.Sequential(
-            nn.Conv1d(in_channels=1, out_channels=1,
-                      kernel_size=(8,), stride=(4,)),
-            nn.LeakyReLU(negative_slope=0.01),
             nn.Conv1d(in_channels=1, out_channels=3,
+                      kernel_size=(16,), stride=(8,)),
+            nn.LeakyReLU(negative_slope=0.01),
+            nn.Conv1d(in_channels=3, out_channels=5,
                       kernel_size=(8,), stride=(4,)),
             nn.LeakyReLU(negative_slope=0.01),
         )
@@ -111,28 +117,28 @@ class FormantCoder(nn.Module):
         # )
 
         self.decoder = nn.Sequential(
-            nn.ConvTranspose1d(in_channels=3, out_channels=1,
+            nn.ConvTranspose1d(in_channels=5, out_channels=3,
                                output_padding=(3,),
                                kernel_size=(8,), stride=(4,)),
             nn.LeakyReLU(negative_slope=0.01),
-            nn.ConvTranspose1d(in_channels=1, out_channels=1,
+            nn.ConvTranspose1d(in_channels=3, out_channels=1,
                                output_padding=(1,),
-                               kernel_size=(8,), stride=(4,))
+                               kernel_size=(16,), stride=(8,))
         )
 
     def encode(self, x):
-        x = x.view(x.shape[0], 1, x.shape[1]) / 60
+        x = x.view(x.shape[0], 1, x.shape[1]) / 100
         return self.encoder(x)
 
     def decode(self, x):
         x = self.decoder(x)
-        return x.view(x.shape[0], x.shape[2]) * 60
+        return x.view(x.shape[0], x.shape[2]) * 100
 
     def forward(self, x):
         return self.decode(self.encode(x))
 
     def test_dimension(self):
-        x = torch.zeros((3, 1025))
+        x = torch.zeros((3, frame_size))
         print('encoded shape', self.encode(x).shape)
         print('decoded shape', self.forward(x).shape)
 
@@ -144,11 +150,11 @@ class FormantTransformer(nn.Module):
     def __init__(self):
         super().__init__()
         self.transform = nn.Sequential(
-            nn.Linear(3*62, 128),
+            nn.Linear(5*14, 32),
             nn.LeakyReLU(negative_slope=0.2),
-            nn.Linear(128, 128),
+            nn.Linear(32, 32),
             nn.LeakyReLU(negative_slope=0.2),
-            nn.Linear(128, 3*62),
+            nn.Linear(32, 5*14),
             nn.LeakyReLU(negative_slope=0.2),
         )
 
@@ -226,8 +232,19 @@ class SplitModel(nn.Module):
             ), 1)
 
 
-class SplitLoss(nn.Module):
-    pass
+class HarmonicAE(nn.Module):
+    def __init__(self):
+        super().__init__()
+        t = np.linspace(0, sr/2, num=frame_size, endpoint=True).reshape((1, -1))
+        self.positional_coding = nn.Parameter(torch.from_numpy(t))
+
+        self.model = nn.Sequential()
+
+    def forward(self, f0, prob):
+        f0 = f0.view(-1, 1)
+        hi_recon = torch.cos(self.positional_coding * 2 * np.pi / f0)
+        prob = prob.view(-1, 1)
+        z = torch.cat((hi_recon, prob), 1)
 
 
 if __name__ == '__main__':
