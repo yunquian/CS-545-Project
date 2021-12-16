@@ -27,8 +27,8 @@ class AudioData:
         self.amp = np.abs(zxx)
         self.align_features = mfcc_from_amp(self.amp, sr, n_mfcc_align)
         self.mfcc_model = mfcc_from_amp(self.amp, sr, n_mfcc_model)
-        self.frame_energy = np.average(self.amp ** 2, axis=0)
-        # self.frame_energy = np.ones_like(self.frame_energy)
+        # self.frame_energy = np.average(self.amp ** 2, axis=0)
+        self.frame_energy = np.ones(self.amp.shape[1])
         # self.selected_frames = np.ones(self.amp.shape[1], dtype=np.bool)
         self.selected_frames = non_silent_frames(self.amp, non_silent_cutoff_db)
 

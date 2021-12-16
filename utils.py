@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 
 import torch
@@ -30,3 +32,14 @@ def get_model_param_count(m: torch.nn.Module, only_trainable=True):
         parameters = [p for p in parameters if p.requires_grad]
     unique = {p.data_ptr(): p for p in parameters}.values()
     return sum(p.numel() for p in unique)
+
+
+class Timer:
+    def __init__(self):
+        self.start = 0
+
+    def tick(self):
+        self.start = time.time()
+
+    def tock(self, title=''):
+        print('Time used (', title, '):', time.time() - self.start, 'seconds')
