@@ -31,7 +31,11 @@ demo purposes
 
 # Samples
 
+`samples/src.wav`: source input audio
 
+`samples/tar.wav`: target style audio
+
+`samples/est.wav`: estimated output audio
 
 # TODO
 
